@@ -1,0 +1,11 @@
+#Virtual environment
+.venv/
+
+#pycache
+__pycache__/
+
+#IDE settings
+.vscode/
+
+#App data
+data/*
