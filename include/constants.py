@@ -1,0 +1,1 @@
+FILEPATH_WORDLIST = './data/word_list.txt'

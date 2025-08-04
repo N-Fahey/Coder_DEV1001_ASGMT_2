@@ -1,7 +1,8 @@
 from include.login import UserLibrary
+from include.game import WordGame
 
 
-lib = UserLibrary('data/users.json')
+lib = UserLibrary('data/userdata/users.json')
 
 user = input('Username: ')
 password = input('Password: ')

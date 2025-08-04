@@ -7,5 +7,5 @@ __pycache__/
 #IDE settings
 .vscode/
 
-#App data
-data/*
+#User data
+userdata/
