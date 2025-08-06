@@ -1,6 +1,9 @@
 import hashlib
 import json
-import os
+import getpass
+from pathlib import Path
+
+from .settings import USERNAME_MIN_LENGTH, PASSWORD_MIN_LENGTH
 
 #User class
 class User():
@@ -23,6 +26,9 @@ class User():
     def __repr__(self):
         return f"<User: '{self._username}'>"
     
+    def __str__(self):
+        return f"{self._username}"
+    
     @staticmethod
     def hash_password(password:str):
         '''Take a plaintext password string and return sha256 hash of the string
@@ -41,7 +47,6 @@ class User():
             'won':self.games_won,
             'scores':self.scores
         }
-        print(export_dict)
         return export_dict
 
     def check_password(self, password:str):
@@ -59,14 +64,17 @@ class UserLibrary():
     def __init__(self, filepath:str):
         '''Class to load / store available user objects from users file'''
         self._users = {}
-        self._filepath = filepath
-        #Check filepath exists, otherwise create & log creation
-        if not os.path.exists(filepath):
+        self._path = Path(filepath)
+        self.logged_in_user = None
+
+        #Check filepath exists, otherwise create
+        if not self._path.exists():
             print("Users file doesn't exist, creating it... ", end='')
-            with open(filepath, 'x'):
+            self._path.parent.mkdir(exist_ok=True, parents=True)
+            with open(self._path, 'w'):
                 print("Success!")
         #Open file & load json into obj
-        with open(filepath, 'r') as user_file:
+        with open(self._path, 'r') as user_file:
             if len(user_file.read()) == 0:
                 print('No users in userfile')
                 return
@@ -92,6 +100,11 @@ class UserLibrary():
         
         return False
 
+    def user_count(self):
+        '''Get number of registered users
+        Returns: int'''
+        return len(self._users)
+
     def _save_userfile(self):
         '''Method to save current users from UserLib attribute to filesystem'''
         user_str_list = []
@@ -104,17 +117,17 @@ class UserLibrary():
             user_str_list.append(export_string)
         
         try:
-            with open(self._filepath, 'w') as user_file:
+            with open(self._path, 'w') as user_file:
                 json.dump(user_str_list, user_file, indent=4)
                 return True
         except Exception as e:
             raise e
 
-    def add_user(self, username:str, password:str):
+    def _add_user(self, username:str, password:str):
         '''Create a new user
-        Returns: bool (success/fail)'''
+        Returns: User obj'''
         if self.user_exists(username):
-            raise ValueError('User already exists!')
+            raise ValueError(f'User {username} already exists!')
 
         #Hash password to create user
         password_hashed = User.hash_password(password)
@@ -125,9 +138,9 @@ class UserLibrary():
         #Update userlib file (call _ method)
         self._users[username] = new_user
         self._save_userfile()
-        return True
+        return new_user
     
-    def check_login(self, username:str, password:str):
+    def _check_login(self, username:str, password:str):
         '''Check if provided username & password correctly matches to a saved user'''
         if not self.user_exists(username):
             return False
@@ -138,3 +151,55 @@ class UserLibrary():
             return False
         
         return True
+    
+    def create_new_user(self):
+        username = None
+        password = None
+
+        while username is None:
+            username_input = input('Choose a username: ')
+
+            #Check username length
+            if len(username_input) < USERNAME_MIN_LENGTH:
+                print(f'Username needs to be {USERNAME_MIN_LENGTH} or more characters. Please try again...')
+                continue
+            
+            #Check if username already exists
+            if self.user_exists(username_input):
+                print(f'User {username_input} already exists. Please try again...')
+                continue
+
+            #Confirm username
+            username = username_input
+
+        while password is None:
+            password_input = getpass.getpass('Choose a password: ')
+
+            #Check password length
+            if len(password_input) < PASSWORD_MIN_LENGTH:
+                print(f'Password should be minimum {PASSWORD_MIN_LENGTH} characters. Please try again...')
+                continue
+
+            #Any other requirements
+
+            #Confirm password
+            password = password_input
+
+        new_user = self._add_user(username, password)
+        print(f"User {new_user} created! You can now log in")
+        return new_user
+    
+    def login(self):
+        username = input('Enter username: ')
+        password = getpass.getpass('Enter password: ')
+
+        result = self._check_login(username, password)
+
+        if not result:
+            print('Username & password combination not recognised. Please try again...')
+            return
+        
+        self.logged_in_user = self._users[username]
+    
+    def logout(self):
+        self.logged_in_user = None

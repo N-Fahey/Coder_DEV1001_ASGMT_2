@@ -1,4 +1,4 @@
-from .constants import FILEPATH_WORDLIST
+from .settings import FILEPATH_WORDLIST
 import random
 
 class Game():
@@ -46,8 +46,9 @@ class WordGame(Game):
         return game_object
 
     @classmethod
-    def use_word(cls, word):
+    def use_word(cls):
         '''Launch the game using a selected word. Must be 5 characters'''
+        word = input('Choose the word')
         if len(word) != 5:
             return None
         
