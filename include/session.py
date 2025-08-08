@@ -7,27 +7,33 @@ from .settings import USERNAME_MIN_LENGTH, PASSWORD_MIN_LENGTH
 
 #User class
 class User():
-    def __init__(self, username:str, hashed_password:str):
+    def __init__(self, username:str, hashed_password:str, played=0, won=0, scores={1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}):
         '''Class to store user information (username, password & game stats)
-        Will be instanciated by UserLib class when loading from file or adding a new user'''
+        Will be instanciated by Session class when loading from file or adding a new user'''
         self._username = username
         self.__hashed_password = hashed_password
-        self.games_played = 0
-        self.games_won = 0
-        self.scores = {
-            1: 0,
-            2: 0,
-            3: 0,
-            4: 0,
-            5: 0,
-            6: 0
-        }
+        self.games_played = played
+        self.games_won = won
+        self.scores = scores
     
     def __repr__(self):
         return f"<User: '{self._username}'>"
     
     def __str__(self):
         return f"{self._username}"
+    
+    def add_result(self, result:dict):
+        if not all((word in result.keys() for word in ['won', 'rounds'])):
+            raise KeyError('result dict expects keys: won, rounds')
+        
+        won = result['won']
+        rounds = result['rounds']
+
+        self.games_played += 1
+        if won:
+            self.games_won += 1
+            self.scores[rounds] += 1
+        
     
     @staticmethod
     def hash_password(password:str):
@@ -60,21 +66,21 @@ class User():
         
         return False
 
-class UserLibrary():
-    def __init__(self, filepath:str):
-        '''Class to load / store available user objects from users file'''
+class Session():
+    def __init__(self, user_filepath:str):
+        '''Class to manage users & current session state'''
         self._users = {}
-        self._path = Path(filepath)
+        self._user_filepath = Path(user_filepath)
         self.logged_in_user = None
 
         #Check filepath exists, otherwise create
-        if not self._path.exists():
+        if not self._user_filepath.exists():
             print("Users file doesn't exist, creating it... ", end='')
-            self._path.parent.mkdir(exist_ok=True, parents=True)
-            with open(self._path, 'w'):
+            self._user_filepath.parent.mkdir(exist_ok=True, parents=True)
+            with open(self._user_filepath, 'w'):
                 print("Success!")
         #Open file & load json into obj
-        with open(self._path, 'r') as user_file:
+        with open(self._user_filepath, 'r') as user_file:
             if len(user_file.read()) == 0:
                 print('No users in userfile')
                 return
@@ -87,7 +93,7 @@ class UserLibrary():
         #iterate & load users into _users
         for user in user_json:
             try:
-                user_obj = User(user['username'], user['hash'])
+                user_obj = User(username=user['username'], hashed_password=user['hash'], won=user['won'], played=user['played'], scores=user['scores'])
                 self._users[user['username']] = user_obj
             except Exception as e:
                 raise e
@@ -104,6 +110,10 @@ class UserLibrary():
         '''Get number of registered users
         Returns: int'''
         return len(self._users)
+    
+    def update_scores(self, result:dict):
+        self.logged_in_user.add_result(result)
+        self._save_userfile()
 
     def _save_userfile(self):
         '''Method to save current users from UserLib attribute to filesystem'''
@@ -117,7 +127,7 @@ class UserLibrary():
             user_str_list.append(export_string)
         
         try:
-            with open(self._path, 'w') as user_file:
+            with open(self._user_filepath, 'w') as user_file:
                 json.dump(user_str_list, user_file, indent=4)
                 return True
         except Exception as e:
