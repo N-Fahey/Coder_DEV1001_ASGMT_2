@@ -7,7 +7,7 @@ class Menu():
         menu_strings = []
         menu_actions = {}
         for  number, (option, func) in enumerate(options.items()):
-            menu_strings.append(f"{number + 1}: {option}")
+            menu_strings.append(f"  {number + 1}: {option}")
             menu_actions[number + 1] = func
         
         self._menu_string = '\n'.join(menu_strings)

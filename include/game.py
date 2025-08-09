@@ -60,7 +60,7 @@ class WordGame(Game):
     def _update_result(self, won:bool, round_no:int = None):
         self._result = {
             'won': won,
-            'rounds': round_no
+            'rounds': str(round_no)
         }
 
     def reset(self):

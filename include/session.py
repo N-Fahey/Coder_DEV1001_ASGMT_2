@@ -1,13 +1,16 @@
-import hashlib
 import json
 import getpass
+import bcrypt
+from num2words import num2words
 from pathlib import Path
+from rich.table import Table
+from rich import print
 
 from .settings import USERNAME_MIN_LENGTH, PASSWORD_MIN_LENGTH
 
 #User class
 class User():
-    def __init__(self, username:str, hashed_password:str, played=0, won=0, scores={1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}):
+    def __init__(self, username:str, hashed_password:str, played=0, won=0, scores={'1': 0, '2': 0, '3': 0, '4': 0, '5': 0, '6': 0}):
         '''Class to store user information (username, password & game stats)
         Will be instanciated by Session class when loading from file or adding a new user'''
         self._username = username
@@ -25,7 +28,6 @@ class User():
     def add_result(self, result:dict):
         if not all((word in result.keys() for word in ['won', 'rounds'])):
             raise KeyError('result dict expects keys: won, rounds')
-        
         won = result['won']
         rounds = result['rounds']
 
@@ -40,15 +42,16 @@ class User():
         '''Take a plaintext password string and return sha256 hash of the string
         Returns: str'''
         password_encoded = password.encode('utf-8')
-        hashed_password = hashlib.sha256(password_encoded).hexdigest()
+        #hashed_password = hashlib.sha256(password_encoded).hexdigest()
+        hashed_password = bcrypt.hashpw(password_encoded, bcrypt.gensalt())
         return hashed_password
     
     def export(self):
-        '''Return a string representation of the user object, for saving to file
-        Returns: str'''
+        '''Return a dict representation of the user object, for saving to file
+        Returns: dict'''
         export_dict = {
             'username': self._username,
-            'hash': self.__hashed_password,
+            'hash': self.__hashed_password.decode('utf-8'),
             'played':self.games_played,
             'won':self.games_won,
             'scores':self.scores
@@ -58,10 +61,12 @@ class User():
     def check_password(self, password:str):
         '''Check if provided plaintext password matches the saved password hash for the user
         Returns: bool'''
-        password_hashed = self.hash_password(password)
-
+        #OLD: password_hashed = self.hash_password(password)
+        password_encoded = password.encode('utf-8')
+        
         #If hashed version of provided password matches saved password, return True
-        if password_hashed == self.__hashed_password:
+        #OLD: if password_hashed == self.__hashed_password:
+        if bcrypt.checkpw(password_encoded, self.__hashed_password):
             return True
         
         return False
@@ -93,7 +98,7 @@ class Session():
         #iterate & load users into _users
         for user in user_json:
             try:
-                user_obj = User(username=user['username'], hashed_password=user['hash'], won=user['won'], played=user['played'], scores=user['scores'])
+                user_obj = User(username=user['username'], hashed_password=user['hash'].encode('utf-8'), won=user['won'], played=user['played'], scores=user['scores'])
                 self._users[user['username']] = user_obj
             except Exception as e:
                 raise e
@@ -161,6 +166,18 @@ class Session():
             return False
         
         return True
+    
+    def print_scores(self):
+        '''Display current users game scores
+        Returns: None'''
+        score_tbl = Table(show_edge=True)
+        # Center align all columns
+        score_tbl.add_column(header="[b]Your Scores[/b]", justify="center")
+        score_tbl.add_row(f'[b]Games Played:[/b] {self.logged_in_user.games_played}')
+        score_tbl.add_row(f'[b]Games Won:[/b] {self.logged_in_user.games_won}')
+        for num in range(1, 7):
+            score_tbl.add_row(f'[b]{num2words(num, to='ordinal_num')} guess:[/b] {self.logged_in_user.scores[str(num)]}')
+        print(score_tbl)
     
     def create_new_user(self):
         username = None

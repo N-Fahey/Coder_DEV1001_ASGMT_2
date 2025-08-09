@@ -3,12 +3,6 @@ from include.game import WordGame
 from include.menu import Menu
 from include.settings import FILEPATH_USERLIB
 
-def placeholder():
-    pass
-
-def check_settings():
-    pass
-
 def main():
     #Load session & game objects
     session = Session(user_filepath=FILEPATH_USERLIB)
@@ -19,8 +13,7 @@ def main():
 
     loggedin_menu_options = {
         'Play new game': game.play_game,
-        'View game history': placeholder,
-        'View high scores': placeholder,
+        'View my scores': session.print_scores,
         'Logout': session.logout,
         'Exit': None
     }
@@ -46,30 +39,6 @@ def main():
             exit_code = submenu.run()
             if exit_code == 'exit': break
             if exit_code == 'continue': continue
-        
-
-    ### Login Stage ###
-    #x Check if any users, if none skip to user creation
-    #x Login
-
-    #x Create user
-
-    #x  Exit
-
-    ### Game Stage ###
-    #If want to play, choose random word / specific word
-    #Other options - check user score history, leaderboards, logout, exit
-
-    #x Game - random / specific word
-
-    ## Other Options ##
-    #Check user scores
-
-    #Check leaderboards
-
-    #x Logout
-
-    #x Exit (and logout)
 
 if __name__ == '__main__':
     main()
