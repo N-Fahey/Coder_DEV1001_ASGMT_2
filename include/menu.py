@@ -1,4 +1,5 @@
 from types import FunctionType, MethodType
+from rich import print
 
 class Menu():
     def __init__(self, options:dict):
@@ -14,9 +15,11 @@ class Menu():
         self._menu_actions = menu_actions
     
     def _show_options(self):
+        '''Prints the menu options'''
         print(self._menu_string)
     
     def _get_input(self):
+        '''Prompt user to select menu option'''
         while True:
             user_selection = input(">>> ")
             try:
@@ -26,21 +29,27 @@ class Menu():
                 continue
     
     def _run_action(self, selection):
-        if selection not in self._menu_actions.keys():
+        '''Calls the option for provided menu selection
+            Returns:str (exit code)'''
+        if selection not in self._menu_actions:
             raise KeyError(f"Menu option {selection} doesn't exist")
         
+        #Get the action for provided menu option. If option is None, return exit code 'exit'
         action = self._menu_actions[selection]
         if action is None:
             return 'exit'
 
+        #Check selection action is callable
         if type(action) not in [FunctionType, MethodType]:
             raise TypeError("Menu selection is not a function")        
         
+        #Call the action, then return exit code 'continue'
         self._menu_actions[selection]()
         return 'continue'
     
     def run(self):
-        self.active = True
+        '''Method to run the menu & get user selection'''
+        #Loop menu while active
         while True:
             self._show_options()
             user_selection = self._get_input()

@@ -1,22 +1,26 @@
-from .settings import FILEPATH_WORDLIST
 import random
-
 from rich.table import Table
 from rich import print
 
+from .settings import FILEPATH_WORDLIST
+
 class Game():
-    pass
+    def __init__(self, game_type):
+        '''General game class'''
+        self._game_type = game_type
+        self._result = None
 
 class WordGame(Game):
     def __init__(self):
+        '''Word game class'''
+        super().__init__('WordGame')
         self._wordlist = self._get_wordlist()
         self._solution = None
         self._guesses = []
-        self._result = None
 
-    def _get_wordlist(self):
+    def _get_wordlist(self) -> list:
         '''Get a list of valid words from a file system. Expects one word per line
-            Returns: str'''
+            Returns: list'''
         try:
             with open(FILEPATH_WORDLIST) as word_file:
                 #Read lines from word file and general a word list, without \n special chars
@@ -28,64 +32,85 @@ class WordGame(Game):
         return word_list
     
     def _choose_random_word(self):
-        '''Return a randomly chosen word from the wordlist'''
+        '''Set the solution to a randomly chosen word from the wordlist'''
+        #Ensure word list has been loaded
         if self._wordlist is None:
             raise AttributeError("No wordlist loaded")
         
+        #Assign chosen word as the solution
         self._solution = random.choice(self._wordlist)
     
     def _check_guess(self, guess:str):
+        '''Checks the provided guess against the solution.
+            Returns: bool'''
+
         guess_formatted = []
         
+        #Loop through letters in the guess
         for i, letter in enumerate(guess):
             if self._solution[i] == letter:
-                # The letter is in the same spot as the solution
+                # The letter is in the same spot as the solution, add with green background to formatted string
                 guess_formatted.append(f'[on green] {letter} [/]')
                 continue
             if letter in self._solution:
-                #The letter is in the word, but wrong spot
+                #The letter is in the word, but wrong spot, add with yellow background
                 guess_formatted.append(f'[on yellow] {letter} [/]')
                 continue
-            #Letter wasn't in solution
+            #Letter wasn't in solution, so add without formatting
             guess_formatted.append(f' {letter} ')
-            
+
+        #Record the guess    
         self._guesses.append(guess_formatted)
 
+        #Check if the guess was the solution
         if guess.lower() == self._solution:
-            print('You got it! Woohoo!')
             return True
         
         return False
     
     def _update_result(self, won:bool, round_no:int = None):
+        '''Update the saved result attribute with current games result'''
         self._result = {
             'won': won,
             'rounds': str(round_no)
         }
 
+    def get_instructions(self):
+        '''Print the game instructions'''
+        instructions = Table()
+        instructions.add_column("Guess the 5 letter word!", justify='center')
+        instructions.add_row("Type any 5 letter word")
+        instructions.add_row("Green letters are correct")
+        instructions.add_row("Yellow letters are in the word, but wrong spot")
+        instructions.add_row("You have 6 guesses. Good luck!")
+        print(instructions)
+
     def reset(self):
+        '''Reset the game attributes'''
         self._choose_random_word()
         self._result = None
         self._guesses = []
 
-    def get_result(self):
+    def get_result(self) -> dict:
+        '''Get results for the current game
+            Returns: dict'''
         return self._result
 
     def play_game(self):
+        '''Method to run the game'''
         #Select a random word from loaded word list
         self._choose_random_word()
-        print(self._solution)
-        print('''
-              *******************
-              * GUESS THE WORD! *
-              *******************''')
+        self.get_instructions()
+        #Loop through number of guesses (6)
         for num in range(1,7):
             print(f'Guess {num}/6')
+            #Prompt user for their guess, accepting guesses that are in the wordlist only
             while True:
-                guess = input('>>> ')
+                guess = input('>>> ').lower()
                 if guess in self._wordlist:
                     break
             
+            #Check the guess
             result = self._check_guess(guess)
             #Create table grid to show results
             tbl = Table(show_header=False, show_lines=True)
@@ -103,7 +128,7 @@ class WordGame(Game):
                 self._update_result(won=True, round_no=num)
                 return
         #If execution gets here, didn't win
-        print("🙁  Sorry, you didnt get this one.")
+        print(f"🙁  Sorry, you didnt get this one. The word was [green]{self._solution}[/].")
         self._update_result(won=False)
 
     @classmethod

@@ -1,0 +1,17 @@
+ansiwrap==0.8.4
+bcrypt==4.3.0
+click==8.2.1
+console-menu==0.8.0
+docopt==0.6.2
+markdown-it-py==3.0.0
+mdurl==0.1.2
+more-itertools==10.7.0
+num2words==0.5.14
+pyfiglet==1.0.3
+Pygments==2.19.2
+rich==14.1.0
+rich-pyfiglet==1.0.0
+six==1.17.0
+textwrap3==0.9.2
+typeguard==4.4.4
+typing_extensions==4.14.1
