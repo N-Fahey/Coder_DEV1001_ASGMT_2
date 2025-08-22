@@ -46,20 +46,38 @@ class WordGame(Game):
 
         guess_formatted = []
         
-        #Loop through letters in the guess
-        for i, letter in enumerate(guess):
-            if self._solution[i] == letter:
-                # The letter is in the same spot as the solution, add with green background to formatted string
-                guess_formatted.append(f'[on green] {letter} [/]')
-                continue
-            if letter in self._solution:
-                #The letter is in the word, but wrong spot, add with yellow background
-                guess_formatted.append(f'[on yellow] {letter} [/]')
-                continue
-            #Letter wasn't in solution, so add without formatting
-            guess_formatted.append(f' {letter} ')
+        #Need a few variables to track guesses and account for edge cases like double letters
+        solution_chars = list(self._solution)
+        guess_chars = list(guess)
+        guess_formatted = [''] * len(guess)
+        matched = [False] * len(guess)
 
-        #Record the guess    
+        #First check for green letters (right letter, right place)
+        for i, letter in enumerate(guess_chars):
+            if solution_chars[i] == letter:
+                #Formatted list for coloured text in output
+                guess_formatted[i] = f'[on green] {letter} [/]'
+                #Mark this index as matched
+                matched[i] = True
+                #Remove this letter from the solution (so if the same letter is guessed again, it won't be yellow)
+                solution_chars[i] = None
+
+        #Second check for yellow letters (right letter, wrong place)
+        for i, letter in enumerate(guess_chars):
+            #Check if the index is formatted (will return false if it's ''), and continue if so
+            if guess_formatted[i]:
+                continue
+            #Letter is in solution, but can safely assume it's not in same spot as that's been checked in first pass
+            if letter in solution_chars:
+                guess_formatted[i] = f'[on yellow] {letter} [/]'
+                #Remove only 1 index from solution list in case of double yellows
+                i_remove = solution_chars.index(letter)
+                solution_chars[i_remove] = None
+            else:
+                #Letter is in neither guesses, so leave it with default formatting
+                guess_formatted[i] = f' {letter} '
+
+        # Record the guess    
         self._guesses.append(guess_formatted)
 
         #Check if the guess was the solution
@@ -89,6 +107,7 @@ class WordGame(Game):
         '''Reset the game attributes'''
         self._choose_random_word()
         self._result = None
+        self._solution = None
         self._guesses = []
 
     def get_result(self) -> dict:
@@ -98,8 +117,9 @@ class WordGame(Game):
 
     def play_game(self):
         '''Method to run the game'''
-        #Select a random word from loaded word list
-        self._choose_random_word()
+        #Select a random word from loaded word list - unless there is already a solution
+        if self._solution is None:
+            self._choose_random_word()
         self.get_instructions()
         #Loop through number of guesses (6)
         for num in range(1,7):
@@ -149,11 +169,10 @@ class WordGame(Game):
         return game_object
 
     @classmethod
-    def use_word(cls):
+    def use_word(cls, word):
         '''Alternate constructor to launch the game using a selected word.
             Must be 5 characters
             Returns WordGame object'''
-        word = input('Choose the word')
         if len(word) != 5:
             return None
         
