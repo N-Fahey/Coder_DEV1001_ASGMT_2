@@ -14,15 +14,15 @@ class WordGame(Game):
     def __init__(self):
         '''Word game class'''
         super().__init__('WordGame')
-        self._wordlist = self._get_wordlist()
+        self._wordlist = self._get_wordlist(FILEPATH_WORDLIST)
         self._solution = None
         self._guesses = []
 
-    def _get_wordlist(self) -> list:
+    def _get_wordlist(self, wordlist_filepath) -> list:
         '''Get a list of valid words from a file system. Expects one word per line
             Returns: list'''
         try:
-            with open(FILEPATH_WORDLIST) as word_file:
+            with open(wordlist_filepath) as word_file:
                 #Read lines from word file and general a word list, without \n special chars
                 word_list = [line.replace('\n','') for line in word_file.readlines()]
         except FileExistsError: 
