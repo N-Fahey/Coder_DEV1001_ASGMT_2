@@ -25,7 +25,7 @@ class WordGame(Game):
             with open(wordlist_filepath) as word_file:
                 #Read lines from word file and general a word list, without \n special chars
                 word_list = [line.replace('\n','') for line in word_file.readlines()]
-        except FileExistsError: 
+        except FileNotFoundError: 
             print("Word file doesn't exist. Unable to load word list")
             return None
         #Return to be applied to attribute
@@ -105,7 +105,6 @@ class WordGame(Game):
 
     def reset(self):
         '''Reset the game attributes'''
-        self._choose_random_word()
         self._result = None
         self._solution = None
         self._guesses = []
